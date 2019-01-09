@@ -10,7 +10,7 @@ class Player extends Component {
     render() {
         return (
             <div className="App">
-                <img class="rounded-circle" src={this.props.image} />
+                <img class="rounded-circle" alt="players" src={this.props.image} />
                 <div class="mt-2">
                     <h5 class="card-title">{this.props.name}</h5>
                 </div>
