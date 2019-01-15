@@ -37,12 +37,24 @@ class App extends Component {
 
   constructor() {
     super();
-    this.drone = new window.Scaledrone("AfdKeFBcrOpY48AO");
+    this.drone = new window.Scaledrone("w4BKWxiW6yzeGrN3");
     this.drone.on("open", error => {
       if (error) {
         return console.log(error);
       }
+
+      const user = { clientId: this.drone.clientId };
+      axios.post("http://localhost:4000/auth", { user })
+        .then(response => response.data)
+        .then(jwt => this.drone.authenticate(jwt));
     });
+
+    this.drone.on("authenticate", error => {
+      if (error) {
+        return console.error(error);
+      }
+      console.log("Authenticated");
+     });
 
     const room = this.drone.subscribe("live-votes");
     room.on("data", data => {
@@ -66,10 +78,10 @@ class App extends Component {
     this.setState({ playerDetails: playerData });
   }
   handleEvent = playerId => {
-    const vote = { player_id: playerId };
+    const vote = { player_id: playerId, clientId: this.drone.clientId };
 
     axios.post("http://localhost:4000/vote", { vote }).then(response => {
-      console.log(response);
+      //console.log(response);
     });
   };
 

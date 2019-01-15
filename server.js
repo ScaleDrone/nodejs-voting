@@ -2,12 +2,16 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const port = process.env.PORT || 4000;
-
+const port = 4000;
+const jwt = require('jsonwebtoken')
 const Scaledrone = require("scaledrone-node-push");
+CHANNEL_ID = process.env.CHANNEL_ID;
+CHANNEL_SECRET = process.env.SECRET_KEY
+
+
 const sd = new Scaledrone({
-  channelId: process.env.CHANNEL_ID,
-  secretKey: process.env.SECRET_KEY
+  channelId: CHANNEL_ID,
+  secretKey: CHANNEL_SECRET
 });
 
 app.use(bodyParser.json());
@@ -21,16 +25,43 @@ app.use((req, res, next) => {
   next();
 });
 
+app.post('/auth', function(req, res) {
+  const { body } = req;
+  const userId = body.user.clientId
+  if (hasChannelAccess(userId)) {
+    const payload = {
+      client: body.user.clientId,
+      channel: CHANNEL_ID,
+      permissions: {
+        '^live-votes$': {
+          publish: false,
+          subscribe: true,
+        },
+      },
+      exp: Math.floor(Date.now() / 1000) + 60 * 3 // client has to use this token within 3 minutes
+    };
+    const token = jwt.sign(payload, CHANNEL_SECRET, {algorithm: 'HS256'});
+    res.status(200).end(token);
+  } else {
+    res.status(403).end('Sorry! You are not allowed.');
+  }
+});
+function hasChannelAccess(req) {
+  // Your should implement your own authentication code here.
+  // You could query your user from your database and see if they are allowed to
+  // connect or give them user-scoped access using JWT permissions
+  return true;
+}
+
 app.post("/vote", (req, res) => {
   const { body } = req;
   const room = "live-votes";
   const response = { playerId: body.vote.player_id };
-
-  sd.publish(room, response.playerId, error => {
-    // check for errors
+  const message = response.playerId
+  sd.publish(room, message, error => {
     if (error) {
       console.log(error);
-    } else {
+    }else {
       res.json({
         player_id: body
       });
