@@ -3,11 +3,10 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 const port = 4000;
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
 const Scaledrone = require("scaledrone-node-push");
 CHANNEL_ID = process.env.CHANNEL_ID;
-CHANNEL_SECRET = process.env.SECRET_KEY
-
+CHANNEL_SECRET = process.env.SECRET_KEY;
 
 const sd = new Scaledrone({
   channelId: CHANNEL_ID,
@@ -25,25 +24,25 @@ app.use((req, res, next) => {
   next();
 });
 
-app.post('/auth', function(req, res) {
+app.post("/auth", function(req, res) {
   const { body } = req;
-  const userId = body.user.clientId
+  const userId = body.user.clientId;
   if (hasChannelAccess(userId)) {
     const payload = {
       client: body.user.clientId,
       channel: CHANNEL_ID,
       permissions: {
-        '^live-votes$': {
+        "^live-votes$": {
           publish: false,
-          subscribe: true,
-        },
+          subscribe: true
+        }
       },
       exp: Math.floor(Date.now() / 1000) + 60 * 3 // client has to use this token within 3 minutes
     };
-    const token = jwt.sign(payload, CHANNEL_SECRET, {algorithm: 'HS256'});
+    const token = jwt.sign(payload, CHANNEL_SECRET, { algorithm: "HS256" });
     res.status(200).end(token);
   } else {
-    res.status(403).end('Sorry! You are not allowed.');
+    res.status(403).end("Sorry! You are not allowed.");
   }
 });
 function hasChannelAccess(req) {
@@ -57,11 +56,11 @@ app.post("/vote", (req, res) => {
   const { body } = req;
   const room = "live-votes";
   const response = { playerId: body.vote.player_id };
-  const message = response.playerId
+  const message = response.playerId;
   sd.publish(room, message, error => {
     if (error) {
       console.log(error);
-    }else {
+    } else {
       res.json({
         player_id: body
       });
